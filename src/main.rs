@@ -1,5 +1,6 @@
 mod config;
 mod receiver;
+mod adapters;
 mod providers;
 mod sender;
 mod cli;

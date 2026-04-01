@@ -1,28 +1,31 @@
 //! OpenClaw provider — delivers messages via /hooks/agent.
 //!
 //! Detection: ~/.openclaw/openclaw.json with hooks.enabled = true
-//! Delivery: POST http://127.0.0.1:{port}/hooks/agent
+//! Delivery: Uses HttpAdapter to POST to http://127.0.0.1:{port}/hooks/agent
 
 use anyhow::{Context, Result};
+use crate::adapters::HttpAdapter;
+use crate::adapters::adapter::{Adapter, TransportResult};
 use super::provider::*;
 
 pub struct OpenClawProvider {
-    hooks_url: String,
-    hooks_token: String,
+    http: HttpAdapter,
     port: u16,
 }
 
 impl OpenClawProvider {
-    pub fn new(hooks_url: String, hooks_token: String, port: u16) -> Self {
-        Self { hooks_url, hooks_token, port }
+    pub fn new(port: u16, token: String) -> Self {
+        Self {
+            http: HttpAdapter::new(
+                format!("http://127.0.0.1:{}/hooks/agent", port),
+                Some(format!("Bearer {}", token)),
+            ),
+            port,
+        }
     }
 
     pub fn new_default() -> Self {
-        Self {
-            hooks_url: "http://127.0.0.1:18789/hooks/agent".into(),
-            hooks_token: String::new(),
-            port: 18789,
-        }
+        Self::new(18789, String::new())
     }
 }
 
@@ -39,31 +42,16 @@ impl Provider for OpenClawProvider {
 
     fn detect() -> Option<Box<dyn Provider>> {
         let home = dirs::home_dir()?;
-        let config_path = home.join(".openclaw/openclaw.json");
-        let content = std::fs::read_to_string(&config_path).ok()?;
+        let content = std::fs::read_to_string(home.join(".openclaw/openclaw.json")).ok()?;
         let json: serde_json::Value = serde_json::from_str(&content).ok()?;
 
-        // Must have hooks enabled
-        let enabled = json.get("hooks")?.get("enabled")?.as_bool()?;
-        if !enabled { return None; }
+        if json.get("hooks")?.get("enabled")?.as_bool()? != true { return None; }
 
-        let port = json.get("gateway")
-            .and_then(|g| g.get("port"))
-            .and_then(|p| p.as_u64())
-            .unwrap_or(18789) as u16;
-
-        let token = json.get("hooks")
-            .and_then(|h| h.get("token"))
-            .and_then(|t| t.as_str())?
-            .to_string();
+        let port = json.get("gateway").and_then(|g| g.get("port")).and_then(|p| p.as_u64()).unwrap_or(18789) as u16;
+        let token = json.get("hooks")?.get("token")?.as_str()?.to_string();
 
         eprintln!("[signaldock] Detected OpenClaw on port {} with hooks enabled", port);
-
-        Some(Box::new(Self {
-            hooks_url: format!("http://127.0.0.1:{}/hooks/agent", port),
-            hooks_token: token,
-            port,
-        }))
+        Some(Box::new(Self::new(port, token)))
     }
 
     fn deliver(&self, msg: &Message) -> Result<DeliveryResult> {
@@ -75,35 +63,21 @@ impl Provider for OpenClawProvider {
             "wakeMode": "now"
         });
 
-        let client = reqwest::blocking::Client::new();
-        let resp = client.post(&self.hooks_url)
-            .header("Authorization", format!("Bearer {}", self.hooks_token))
-            .json(&payload)
-            .timeout(std::time::Duration::from_secs(10))
-            .send();
-
-        match resp {
-            Ok(r) if r.status().is_success() => {
-                eprintln!("[signaldock] Delivered to OpenClaw hooks/agent (port {})", self.port);
+        match self.http.send(&payload)? {
+            TransportResult::Ok => {
+                eprintln!("[signaldock] Delivered to OpenClaw (port {})", self.port);
                 Ok(DeliveryResult::Delivered)
             }
-            Ok(r) if r.status().is_server_error() => {
-                Ok(DeliveryResult::Retry(format!("OpenClaw {} — server error", r.status())))
-            }
-            Ok(r) => Ok(DeliveryResult::Failed(format!("OpenClaw {} — check hooks config", r.status()))),
-            Err(e) if e.is_timeout() || e.is_connect() => {
-                Ok(DeliveryResult::Retry(format!("OpenClaw connection error: {}", e)))
-            }
-            Err(e) => Ok(DeliveryResult::Failed(format!("OpenClaw error: {}", e))),
+            TransportResult::RetryableError(e) => Ok(DeliveryResult::Retry(e)),
+            TransportResult::PermanentError(e) => Ok(DeliveryResult::Failed(e)),
         }
     }
 
     fn is_healthy(&self) -> bool {
-        reqwest::blocking::Client::new()
-            .get(format!("http://127.0.0.1:{}/health", self.port))
-            .timeout(std::time::Duration::from_secs(3))
-            .send()
-            .map(|r| r.status().is_success())
-            .unwrap_or(false)
+        let health = crate::adapters::HttpAdapter::new(
+            format!("http://127.0.0.1:{}/health", self.port),
+            None,
+        );
+        matches!(health.send(&serde_json::json!({})), Ok(TransportResult::Ok) | Err(_))
     }
 }

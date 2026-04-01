@@ -1,121 +1,100 @@
-//! Generic providers: webhook, stdout, file.
+//! Generic providers that wrap adapters directly.
 //!
-//! These are fallback/universal providers that work without
-//! any specific agent platform installed.
+//! These use the adapter layer for transport:
+//! - WebhookProvider → HttpAdapter
+//! - StdoutProvider → StdoutAdapter  
+//! - FileProvider → FileAdapter
 
 use anyhow::Result;
+use crate::adapters::{self, adapter::{Adapter, TransportResult}};
 use super::provider::*;
 
 // ============================================================
-// Webhook — POST JSON to any URL
+// Webhook — wraps HttpAdapter
 // ============================================================
 
 pub struct WebhookProvider {
-    url: String,
+    http: adapters::HttpAdapter,
 }
 
 impl WebhookProvider {
-    pub fn new(url: String) -> Self { Self { url } }
+    pub fn new(url: String) -> Self {
+        Self { http: adapters::HttpAdapter::new(url, None) }
+    }
 }
 
 impl Provider for WebhookProvider {
     fn info(&self) -> ProviderInfo {
-        ProviderInfo {
-            name: "webhook",
-            display_name: "Webhook",
-            version: "-",
-            config_paths: &[],
-            docs_url: "",
-        }
+        ProviderInfo { name: "webhook", display_name: "Webhook", version: "-", config_paths: &[], docs_url: "" }
     }
-
-    fn detect() -> Option<Box<dyn Provider>> { None } // Never auto-detected
-
+    fn detect() -> Option<Box<dyn Provider>> { None }
     fn deliver(&self, msg: &Message) -> Result<DeliveryResult> {
         let payload = serde_json::json!({
             "from": msg.from, "content": msg.content,
             "messageId": msg.id, "conversationId": msg.conversation_id,
             "contentType": msg.content_type, "createdAt": msg.created_at,
-            "metadata": msg.metadata,
         });
-        let client = reqwest::blocking::Client::new();
-        match client.post(&self.url).json(&payload).timeout(std::time::Duration::from_secs(10)).send() {
-            Ok(r) if r.status().is_success() => {
-                eprintln!("[signaldock] Delivered to webhook");
-                Ok(DeliveryResult::Delivered)
-            }
-            Ok(r) if r.status().is_server_error() => Ok(DeliveryResult::Retry(format!("{}", r.status()))),
-            Ok(r) => Ok(DeliveryResult::Failed(format!("{}", r.status()))),
-            Err(e) if e.is_timeout() || e.is_connect() => Ok(DeliveryResult::Retry(format!("{}", e))),
-            Err(e) => Ok(DeliveryResult::Failed(format!("{}", e))),
+        match self.http.send(&payload)? {
+            TransportResult::Ok => Ok(DeliveryResult::Delivered),
+            TransportResult::RetryableError(e) => Ok(DeliveryResult::Retry(e)),
+            TransportResult::PermanentError(e) => Ok(DeliveryResult::Failed(e)),
         }
     }
 }
 
 // ============================================================
-// Stdout — print JSON to stdout (pipe to anything)
+// Stdout — wraps StdoutAdapter
 // ============================================================
 
 pub struct StdoutProvider;
 
 impl Provider for StdoutProvider {
     fn info(&self) -> ProviderInfo {
-        ProviderInfo {
-            name: "stdout",
-            display_name: "Stdout",
-            version: "-",
-            config_paths: &[],
-            docs_url: "",
-        }
+        ProviderInfo { name: "stdout", display_name: "Stdout", version: "-", config_paths: &[], docs_url: "" }
     }
-
     fn detect() -> Option<Box<dyn Provider>> { None }
-
     fn deliver(&self, msg: &Message) -> Result<DeliveryResult> {
-        println!("{}", serde_json::to_string(&serde_json::json!({
+        let payload = serde_json::json!({
             "from": msg.from, "content": msg.content,
             "messageId": msg.id, "conversationId": msg.conversation_id,
             "createdAt": msg.created_at,
-        }))?);
-        Ok(DeliveryResult::Delivered)
+        });
+        let adapter = adapters::StdoutAdapter;
+        match adapter.send(&payload)? {
+            TransportResult::Ok => Ok(DeliveryResult::Delivered),
+            _ => Ok(DeliveryResult::Failed("stdout error".into())),
+        }
     }
 }
 
 // ============================================================
-// File — write JSON files to a directory
+// File — wraps FileAdapter
 // ============================================================
 
 pub struct FileProvider {
-    output_dir: String,
+    file: adapters::FileAdapter,
 }
 
 impl FileProvider {
-    pub fn new(dir: String) -> Self { Self { output_dir: dir } }
+    pub fn new(dir: String) -> Self {
+        Self { file: adapters::FileAdapter::new(dir) }
+    }
 }
 
 impl Provider for FileProvider {
     fn info(&self) -> ProviderInfo {
-        ProviderInfo {
-            name: "file",
-            display_name: "File Output",
-            version: "-",
-            config_paths: &[],
-            docs_url: "",
-        }
+        ProviderInfo { name: "file", display_name: "File Output", version: "-", config_paths: &[], docs_url: "" }
     }
-
     fn detect() -> Option<Box<dyn Provider>> { None }
-
     fn deliver(&self, msg: &Message) -> Result<DeliveryResult> {
-        std::fs::create_dir_all(&self.output_dir)?;
-        let path = std::path::Path::new(&self.output_dir).join(format!("{}.json", msg.id));
-        std::fs::write(&path, serde_json::to_string_pretty(&serde_json::json!({
+        let payload = serde_json::json!({
             "from": msg.from, "content": msg.content,
             "messageId": msg.id, "conversationId": msg.conversation_id,
             "contentType": msg.content_type, "createdAt": msg.created_at,
-            "metadata": msg.metadata,
-        }))?)?;
-        eprintln!("[signaldock] Written to {}", path.display());
-        Ok(DeliveryResult::Delivered)
+        });
+        match self.file.send(&payload)? {
+            TransportResult::Ok => Ok(DeliveryResult::Delivered),
+            _ => Ok(DeliveryResult::Failed("file write error".into())),
+        }
     }
 }
