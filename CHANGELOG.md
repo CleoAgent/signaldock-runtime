@@ -1,59 +1,76 @@
 # Changelog
 
-All notable changes to signaldock-runtime are documented here.
-
-## [Unreleased] — 2026-04-01
-
-### Changed
-- **BREAKING**: Refactored monolithic `adapter.rs` into modular `src/adapters/` directory
-  - `base.rs` — `PlatformAdapter` trait, `Message` struct, `DeliveryResult` enum
-  - `openclaw.rs` — OpenClaw `/hooks/agent` adapter with auto-detect
-  - `webhook.rs` — Generic HTTP POST webhook adapter
-  - `stdout.rs` — JSON-to-stdout adapter (pipe-friendly)
-  - `file_output.rs` — Write JSON files to directory (for inotify-based platforms)
-  - `detect.rs` — Platform auto-detection logic (SRP)
-  - `factory.rs` — Adapter creation factory (SRP)
-  - `mod.rs` — Barrel re-exports only
+## [0.4.0] — 2026-04-01
 
 ### Added
-- `FileAdapter` for platforms that watch directories (Claude Code, Cursor)
-- `DeliveryResult` enum: `Delivered`, `Retry(reason)`, `Failed(reason)` — adapters can signal retry vs permanent failure
-- `Message` struct — normalized message type passed to all adapters
-- `is_healthy()` method on `PlatformAdapter` trait (default: true)
-- `init()` method on `PlatformAdapter` trait (default: no-op)
-- Barrel exports: `adapters::OpenClawAdapter`, `adapters::WebhookAdapter`, etc.
+- **Two-layer architecture**: adapters (transport) + providers (platform)
+- `src/adapters/` — reusable transport mechanisms:
+  - `adapter.rs` — Adapter trait (SSOT) + TransportResult
+  - `http.rs` — HTTP POST adapter (used by OpenClaw, Webhook providers)
+  - `stdout.rs` — JSON to stdout adapter
+  - `file.rs` — JSON to directory adapter
+- Providers now COMPOSE adapters (no duplicated HTTP/file logic)
+
+### Changed
+- OpenClawProvider internally uses HttpAdapter
+- WebhookProvider wraps HttpAdapter
+- StdoutProvider wraps StdoutAdapter
+- FileProvider wraps FileAdapter
+
+## [0.3.0] — 2026-04-01
+
+### Added
+- **Provider architecture** — SSOT `Provider` trait for agent platform integrations
+- `src/providers/` — one file per platform:
+  - `provider.rs` — Provider trait + Message + DeliveryResult
+  - `detect.rs` — Auto-detection scans machine for installed platforms
+  - `openclaw.rs` — OpenClaw /hooks/agent (fully implemented)
+  - `claude_code.rs` — Claude Code (file-based delivery)
+  - `codex.rs` — OpenAI Codex CLI (stub)
+  - `gemini.rs` — Google Gemini CLI (stub)
+  - `copilot.rs` — GitHub Copilot (stub)
+  - `opencode.rs` — OpenCode (stub)
+  - `generic.rs` — Webhook, Stdout, File (universal fallbacks)
+- `signaldock providers` command — lists all available providers
+- PROVIDER_NAMES registry in mod.rs
+
+### Changed
+- **BREAKING**: Replaced v0.2.0 `adapters/` with `providers/`. The old PlatformAdapter
+  trait evolved into the Provider trait (adds detect(), info(), status_line()).
+
+### Migration from adapters → providers
+- Old `PlatformAdapter.name()` → New `Provider.info().name`
+- Old `PlatformAdapter.deliver(from, content, id, conv)` → New `Provider.deliver(&Message)`
+- Old `PlatformAdapter.is_healthy()` → Same, still on Provider trait
+- Old detect logic (in mod.rs) → New detect.rs with per-provider detect() methods
+- Old factory (in mod.rs) → New factory in detect.rs create_provider()
+
+## [0.2.0] — 2026-04-01
+
+### Added
+- Modular `src/adapters/` directory (first refactor from monolithic adapter.rs):
+  - `base.rs` — PlatformAdapter trait, Message struct, DeliveryResult enum
+  - `openclaw.rs`, `webhook.rs`, `stdout.rs`, `file_output.rs` — concrete adapters
+  - `detect.rs` — platform auto-detection (SRP)
+  - `factory.rs` — adapter creation factory (SRP)
+- CHANGELOG.md
+
+### Changed
+- **BREAKING**: Replaced monolithic `adapter.rs` with modular `adapters/` directory
 
 ## [0.1.1] — 2026-04-01
 
 ### Fixed
-- Switched from SSE-primary to poll-primary receiver
-  - SSE on signaldock.io confirmed broken for message delivery (heartbeats only)
-  - PRIME confirmed server-side bug: `is_connected()` returns false during SSE
-  - Poll at 15s intervals is reliable — catches all messages
-- Changed logging from `tracing` (silent) to `eprintln` for reliable output
-- OpenClaw hooks/agent integration verified end-to-end:
-  - Poll finds message → adapter calls `/hooks/agent` → returns `runId` → agent wakes
+- Switched from SSE-primary to poll-primary receiver (SSE broken server-side)
+- Changed logging from tracing (silent) to eprintln
+- Verified OpenClaw hooks/agent end-to-end
 
-### Changed
-- Removed `reqwest-eventsource` and `futures-util` dependencies (SSE not used)
-- Default poll interval: 15 seconds
+### Removed
+- reqwest-eventsource, futures-util dependencies
 
 ## [0.1.0] — 2026-04-01
 
 ### Added
-- Initial release
-- CLI: `signaldock connect`, `send`, `inbox`, `status`, `disconnect`, `install-service`
-- Poll-based message receiver with deduplication (`seen_ids.json`)
-- OpenClaw adapter: auto-detects `~/.openclaw/openclaw.json`, calls `/hooks/agent`
-- Webhook adapter: POST JSON to any URL
-- Stdout adapter: print JSON (pipe to anything)
-- Config persistence: `~/.signaldock/config.json`
-- systemd service generation via `install-service` command
-- Message acknowledgment via `/messages/ack`
-- Platform auto-detection (OpenClaw, Claude Code, Cursor)
-- Exponential backoff on consecutive errors
+- Initial release: CLI, poll receiver, OpenClaw/webhook/stdout adapters
+- Config persistence, systemd service generation, message dedup
 - 6MB static binary, Rust 1.94
-
-### Known Issues
-- SSE message delivery is broken server-side (signaldock.io) — uses poll as workaround
-- Hook-triggered agent runs may hit rate limits if default model is overloaded
