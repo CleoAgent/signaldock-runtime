@@ -60,7 +60,7 @@ pub async fn run(cli: Cli) -> anyhow::Result<()> {
         Command::Connect { id, key, api, platform, webhook, interval } => {
             let platform_type = match platform.as_deref() {
                 Some(p) => p.to_string(),
-                None => adapters::detect(),
+                None => adapters::detect_platform(),
             };
 
             let config = Config {
@@ -117,7 +117,7 @@ pub async fn run(cli: Cli) -> anyhow::Result<()> {
                     let c = Config {
                         agent_id: i, api_key: k,
                         api_base: "https://api.signaldock.io".into(),
-                        platform: adapters::detect(),
+                        platform: adapters::detect_platform(),
                         webhook_url: None,
                         file_output_dir: None,
                     };
