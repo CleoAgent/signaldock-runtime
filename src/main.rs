@@ -5,12 +5,16 @@ mod sender;
 mod cli;
 
 use clap::Parser;
-use tracing_subscriber::EnvFilter;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
+    // Init logging — respect RUST_LOG, default to info
+    let filter = std::env::var("RUST_LOG")
+        .unwrap_or_else(|_| "signaldock_runtime=info".to_string());
     tracing_subscriber::fmt()
-        .with_env_filter(EnvFilter::from_default_env().add_directive("signaldock_runtime=info".parse()?))
+        .with_env_filter(tracing_subscriber::EnvFilter::new(filter))
+        .with_target(false)
+        .with_thread_ids(false)
         .init();
 
     let args = cli::Cli::parse();
