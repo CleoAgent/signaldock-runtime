@@ -5,7 +5,7 @@
 
 use anyhow::{Context, Result};
 use crate::adapters::HttpAdapter;
-use crate::adapters::adapter::{Adapter, TransportResult};
+use crate::adapters::base::{Adapter, TransportResult};
 use super::provider::*;
 
 pub struct OpenClawProvider {

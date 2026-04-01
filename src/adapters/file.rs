@@ -2,7 +2,7 @@
 //! Each payload creates a new .json file. Useful for inotify/fswatch triggers.
 
 use anyhow::Result;
-use super::adapter::{Adapter, TransportResult};
+use super::base::{Adapter, TransportResult};
 
 pub struct FileAdapter {
     dir: String,

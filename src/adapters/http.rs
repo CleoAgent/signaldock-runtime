@@ -6,7 +6,7 @@
 //! - Any future provider that communicates via HTTP
 
 use anyhow::Result;
-use super::adapter::{Adapter, TransportResult};
+use super::base::{Adapter, TransportResult};
 
 pub struct HttpAdapter {
     url: String,

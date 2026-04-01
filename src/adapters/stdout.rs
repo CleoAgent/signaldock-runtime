@@ -2,7 +2,7 @@
 //! Pipe-friendly: signaldock connect --platform stdout | jq . | my-bot
 
 use anyhow::Result;
-use super::adapter::{Adapter, TransportResult};
+use super::base::{Adapter, TransportResult};
 
 pub struct StdoutAdapter;
 

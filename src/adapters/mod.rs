@@ -24,7 +24,7 @@
 //! **Providers** = agent platforms (WHERE to deliver, using adapters)
 
 // Transport layer
-pub mod adapter;
+pub mod base;
 pub mod http;
 pub mod stdout;
 pub mod file;
@@ -33,7 +33,7 @@ pub mod file;
 pub mod providers;
 
 // Re-export transport types
-pub use adapter::{Adapter, AdapterConfig, TransportResult};
+pub use base::{Adapter, AdapterConfig, TransportResult};
 pub use http::HttpAdapter;
 pub use stdout::StdoutAdapter;
 pub use file::FileAdapter;

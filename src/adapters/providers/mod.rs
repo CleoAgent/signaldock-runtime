@@ -34,8 +34,9 @@
 // SSOT interface — every provider implements this
 pub mod provider;
 
-// Auto-detection logic
+// Auto-detection + factory
 pub mod detect;
+pub mod factory;
 
 // --- Provider implementations ---
 pub mod openclaw;
@@ -59,7 +60,8 @@ pub use opencode::OpenCodeProvider;
 pub use generic::{WebhookProvider, StdoutProvider, FileProvider};
 
 // Re-export detection
-pub use detect::{detect_provider, create_provider};
+pub use detect::detect_provider;
+pub use factory::create_provider;
 
 /// Registry of all known providers, checked in priority order.
 /// First match wins during auto-detection.

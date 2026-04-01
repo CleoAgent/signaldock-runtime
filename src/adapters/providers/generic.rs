@@ -6,7 +6,7 @@
 //! - FileProvider → FileAdapter
 
 use anyhow::Result;
-use crate::adapters::{self, adapter::{Adapter, TransportResult}};
+use crate::adapters::{self, base::{Adapter, TransportResult}};
 use super::provider::*;
 
 // ============================================================
