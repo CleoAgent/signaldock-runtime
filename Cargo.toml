@@ -24,3 +24,4 @@ anyhow = "1"
 thiserror = "2"
 dirs = "6"
 chrono = { version = "0.4", features = ["serde"] }
+urlencoding = "2"

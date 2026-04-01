@@ -45,10 +45,18 @@ async fn poll_once(
     seen: &Arc<Mutex<HashSet<String>>>,
 ) -> Result<usize> {
     let client = reqwest::Client::new();
-    let resp = client.get(format!("{}/messages/peek?limit=50", config.api_base))
+    let resp = client.get(format!(
+            "{}/messages/peek?limit=50&mentioned={}",
+            config.api_base,
+            urlencoding::encode(&config.agent_id),
+        ))
         .header("Authorization", format!("Bearer {}", config.api_key))
         .header("X-Agent-Id", &config.agent_id)
-        .header("User-Agent", format!("signaldock-runtime/0.2 ({})", config.agent_id))
+        .header("User-Agent", format!(
+            "signaldock-runtime/{} ({})",
+            env!("CARGO_PKG_VERSION"),
+            config.agent_id,
+        ))
         .timeout(Duration::from_secs(10))
         .send().await?;
 
@@ -134,8 +142,13 @@ fn load_seen(config: &Config) -> Result<HashSet<String>> {
 
 fn save_seen(config: &Config, seen: &Arc<Mutex<HashSet<String>>>) -> Result<()> {
     let path = config.state_dir()?.join("seen_ids.json");
-    let s = seen.lock().unwrap();
-    let ids: Vec<&String> = s.iter().take(5000).collect();
+    let mut s = seen.lock().unwrap();
+    // Prune to most recent 1000 entries to prevent unbounded growth
+    if s.len() > 1000 {
+        let all: Vec<String> = s.drain().collect();
+        s.extend(all.into_iter().rev().take(1000));
+    }
+    let ids: Vec<&String> = s.iter().collect();
     std::fs::write(path, serde_json::to_string(&ids)?)?;
     Ok(())
 }
