@@ -1,5 +1,5 @@
 use clap::{Parser, Subcommand};
-use crate::{config::Config, receiver, sender, providers};
+use crate::{config::Config, receiver, sender, adapters};
 
 #[derive(Parser)]
 #[command(name = "signaldock", version, about = "Universal agent connector for SignalDock")]
@@ -40,7 +40,7 @@ pub enum Command {
 pub async fn run(cli: Cli) -> anyhow::Result<()> {
     match cli.command {
         Command::Connect { id, key, api, platform, webhook, interval } => {
-            let platform_name = platform.unwrap_or_else(|| providers::detect_provider());
+            let platform_name = platform.unwrap_or_else(|| adapters::detect_provider());
             let config = Config {
                 agent_id: id.clone(), api_key: key, api_base: api,
                 platform: platform_name.clone(),
@@ -48,7 +48,7 @@ pub async fn run(cli: Cli) -> anyhow::Result<()> {
             };
             config.save()?;
 
-            let provider = providers::create_provider(&config)?;
+            let provider = adapters::create_provider(&config)?;
             receiver::run_poll(config, provider, interval).await?;
         }
 
@@ -59,7 +59,7 @@ pub async fn run(cli: Cli) -> anyhow::Result<()> {
                     println!("API:      {}", c.api_base);
                     println!("Provider: {}", c.platform);
                     println!("Config:   {}", Config::config_path()?.display());
-                    if let Ok(p) = providers::create_provider(&c) {
+                    if let Ok(p) = adapters::create_provider(&c) {
                         println!("Health:   {}", p.status_line());
                     }
                 }
@@ -99,7 +99,7 @@ pub async fn run(cli: Cli) -> anyhow::Result<()> {
             println!("  {:15} {:20} Prints JSON to stdout", "stdout", "Stdout");
             println!();
 
-            let detected = providers::detect_provider();
+            let detected = adapters::detect_provider();
             println!("Auto-detected: {}", detected);
         }
 
@@ -109,7 +109,7 @@ pub async fn run(cli: Cli) -> anyhow::Result<()> {
                     let c = Config {
                         agent_id: i, api_key: k,
                         api_base: "https://api.signaldock.io".into(),
-                        platform: providers::detect_provider(),
+                        platform: adapters::detect_provider(),
                         webhook_url: None, file_output_dir: None,
                     };
                     c.save()?;

@@ -1,27 +1,43 @@
-//! Delivery adapters — transport mechanisms for getting messages to agents.
-//!
-//! Adapters define HOW a message is delivered (HTTP POST, stdout, file write).
-//! Providers define WHERE (which platform). Providers USE adapters internally.
-//!
-//! A provider like OpenClaw uses the HTTP adapter to POST to /hooks/agent.
-//! A provider like Claude Code uses the File adapter to write to ~/.claude/messages/.
-//! A user can also use adapters directly via --platform webhook/stdout/file.
+//! Adapter system — unified delivery infrastructure for SignalDock Runtime.
 //!
 //! ```text
-//! adapters/
-//! ├── mod.rs         ← Barrel exports
-//! ├── adapter.rs     ← Adapter trait (SSOT interface)
-//! ├── http.rs        ← HTTP POST to any URL (used by webhook, openclaw)
-//! ├── stdout.rs      ← JSON to stdout (pipe-friendly)
-//! └── file.rs        ← JSON files to directory (inotify-friendly)
+//! src/adapters/
+//! ├── mod.rs              ← This file: top-level exports
+//! ├── adapter.rs          ← Adapter trait (transport SSOT)
+//! ├── http.rs             ← HTTP POST transport
+//! ├── stdout.rs           ← Stdout transport
+//! ├── file.rs             ← File write transport
+//! └── providers/          ← Agent platform providers
+//!     ├── mod.rs          ← Provider registry + barrel exports
+//!     ├── provider.rs     ← Provider trait (platform SSOT)
+//!     ├── detect.rs       ← Auto-detection + factory
+//!     ├── openclaw.rs     ← OpenClaw
+//!     ├── claude_code.rs  ← Claude Code
+//!     ├── codex.rs        ← OpenAI Codex
+//!     ├── gemini.rs       ← Google Gemini
+//!     ├── copilot.rs      ← GitHub Copilot
+//!     ├── opencode.rs     ← OpenCode
+//!     └── generic.rs      ← Webhook / Stdout / File wrappers
 //! ```
+//!
+//! **Adapters** = transport mechanisms (HOW to deliver)
+//! **Providers** = agent platforms (WHERE to deliver, using adapters)
 
+// Transport layer
 pub mod adapter;
 pub mod http;
 pub mod stdout;
 pub mod file;
 
-pub use adapter::{Adapter, AdapterConfig};
+// Platform providers (nested)
+pub mod providers;
+
+// Re-export transport types
+pub use adapter::{Adapter, AdapterConfig, TransportResult};
 pub use http::HttpAdapter;
 pub use stdout::StdoutAdapter;
 pub use file::FileAdapter;
+
+// Re-export provider types (bubble up for convenience)
+pub use providers::provider::{Provider, ProviderInfo, Message, DeliveryResult};
+pub use providers::{detect_provider, create_provider};

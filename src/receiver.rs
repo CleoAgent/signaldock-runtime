@@ -3,7 +3,7 @@ use std::collections::HashSet;
 use std::sync::{Arc, Mutex};
 use tokio::time::{sleep, Duration};
 use crate::config::Config;
-use crate::providers::provider::{Provider, Message, DeliveryResult};
+use crate::adapters::providers::provider::{Provider, Message, DeliveryResult};
 
 /// Run the poll receiver loop.
 pub async fn run_poll(config: Config, provider: Box<dyn Provider>, interval_secs: u64) -> Result<()> {
