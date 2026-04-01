@@ -2,54 +2,35 @@ name: Release
 
 on:
   push:
-    tags: ['v*']
-  workflow_dispatch:
+    tags:
+      - 'v*'
 
 permissions:
   contents: write
 
-env:
-  CARGO_TERM_COLOR: always
-
 jobs:
   build:
-    name: Build ${{ matrix.target }}
+    name: Build ${{ matrix.artifact_name }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         include:
-          # Linux with musl for maximum compatibility (static binary)
-          - target: x86_64-unknown-linux-musl
+          - target: x86_64-unknown-linux-gnu
             os: ubuntu-latest
-            binary: signaldock
-            archive: signaldock-linux-x64.tar.gz
-            cross: true
-
-          # Linux ARM64 with musl
-          - target: aarch64-unknown-linux-musl
-            os: ubuntu-latest
-            binary: signaldock
-            archive: signaldock-linux-arm64.tar.gz
-            cross: true
+            artifact_name: signaldock-linux-x64
 
           - target: x86_64-apple-darwin
-            os: macos-latest
-            binary: signaldock
-            archive: signaldock-darwin-x64.tar.gz
-            cross: false
+            os: macos-13
+            artifact_name: signaldock-darwin-x64
 
           - target: aarch64-apple-darwin
             os: macos-latest
-            binary: signaldock
-            archive: signaldock-darwin-arm64.tar.gz
-            cross: false
+            artifact_name: signaldock-darwin-arm64
 
           - target: x86_64-pc-windows-msvc
             os: windows-latest
-            binary: signaldock.exe
-            archive: signaldock-windows-x64.zip
-            cross: false
+            artifact_name: signaldock-windows-x64.exe
 
     steps:
       - uses: actions/checkout@v4
@@ -59,64 +40,50 @@ jobs:
         with:
           targets: ${{ matrix.target }}
 
-      - name: Install cross
-        if: matrix.cross
-        run: cargo install cross --git https://github.com/cross-rs/cross
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          key: ${{ matrix.target }}
 
-      - name: Build (cross)
-        if: matrix.cross
-        run: cross build --release --target ${{ matrix.target }}
+      - name: Install OpenSSL (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update -q && sudo apt-get install -y pkg-config libssl-dev
 
-      - name: Build (native)
-        if: "!matrix.cross"
+      - name: Build
         run: cargo build --release --target ${{ matrix.target }}
 
-      - name: Package (Unix)
+      - name: Prepare binary (Unix)
         if: runner.os != 'Windows'
-        run: |
-          cd target/${{ matrix.target }}/release
-          tar czf ../../../${{ matrix.archive }} ${{ matrix.binary }}
+        run: cp target/${{ matrix.target }}/release/signaldock ${{ matrix.artifact_name }}
 
-      - name: Package (Windows)
+      - name: Prepare binary (Windows)
         if: runner.os == 'Windows'
-        run: |
-          cd target/${{ matrix.target }}/release
-          Compress-Archive -Path ${{ matrix.binary }} -DestinationPath ../../../${{ matrix.archive }}
+        shell: pwsh
+        run: cp target/${{ matrix.target }}/release/signaldock.exe ${{ matrix.artifact_name }}
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.archive }}
-          path: ${{ matrix.archive }}
+          name: ${{ matrix.artifact_name }}
+          path: ${{ matrix.artifact_name }}
+          if-no-files-found: error
 
   release:
-    name: Create Release
+    name: Create GitHub Release
     needs: build
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/')
     steps:
-      - uses: actions/checkout@v4
-
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
-          path: artifacts
+          merge-multiple: true
 
-      - name: Create Release
+      - name: Create release
         uses: softprops/action-gh-release@v2
         with:
-          files: artifacts/**/*
           generate_release_notes: true
-          draft: false
-          prerelease: false
-
-  # Quick CI check on every push (no release)
-  check:
-    name: Check
-    runs-on: ubuntu-latest
-    if: "!startsWith(github.ref, 'refs/tags/')"
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-      - run: cargo check
-      - run: cargo test --all 2>/dev/null || true
+          files: |
+            signaldock-linux-x64
+            signaldock-darwin-x64
+            signaldock-darwin-arm64
+            signaldock-windows-x64.exe

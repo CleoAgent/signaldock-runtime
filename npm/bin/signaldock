@@ -1,0 +1,26 @@
+#!/usr/bin/env node
+'use strict';
+
+const path = require('path');
+const { spawnSync } = require('child_process');
+const fs = require('fs');
+
+const BIN_DIR = path.join(__dirname);
+const NATIVE_BIN = path.join(BIN_DIR, process.platform === 'win32' ? 'signaldock-native.exe' : 'signaldock-native');
+
+if (!fs.existsSync(NATIVE_BIN)) {
+  console.error(
+    'signaldock: native binary not found at ' + NATIVE_BIN + '\n' +
+    'Try reinstalling: npm install -g @signaldock/runtime'
+  );
+  process.exit(1);
+}
+
+const result = spawnSync(NATIVE_BIN, process.argv.slice(2), { stdio: 'inherit' });
+
+if (result.error) {
+  console.error('signaldock: failed to start binary: ' + result.error.message);
+  process.exit(1);
+}
+
+process.exit(result.status ?? 1);
