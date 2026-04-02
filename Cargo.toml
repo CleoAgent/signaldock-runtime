@@ -1,6 +1,6 @@
 [package]
 name = "signaldock-runtime"
-version = "0.8.0"
+version = "0.8.1"
 edition = "2024"
 description = "Universal agent connector for SignalDock — 2-step install for any agent on any platform"
 license = "MIT OR Apache-2.0"
@@ -15,7 +15,8 @@ path = "src/main.rs"
 [dependencies]
 clap = { version = "4", features = ["derive"] }
 tokio = { version = "1", features = ["full"] }
-reqwest = { version = "0.12", features = ["json", "blocking"] }
+# Use rustls instead of native-tls for musl compatibility
+reqwest = { version = "0.12", default-features = false, features = ["json", "blocking", "rustls-tls"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 tracing = "0.1"
