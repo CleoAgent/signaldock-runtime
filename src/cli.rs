@@ -40,7 +40,7 @@ pub enum Command {
 pub async fn run(cli: Cli) -> anyhow::Result<()> {
     match cli.command {
         Command::Connect { id, key, api, platform, webhook, interval } => {
-            let platform_name = platform.unwrap_or_else(|| adapters::detect_provider());
+            let platform_name = platform.unwrap_or_else(adapters::detect_provider);
             let config = Config {
                 agent_id: id.clone(), api_key: key, api_base: api,
                 platform: platform_name.clone(),

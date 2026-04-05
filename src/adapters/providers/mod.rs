@@ -48,7 +48,7 @@ pub mod opencode;
 pub mod generic;
 
 // Re-export the trait and core types
-pub use provider::{Provider, ProviderInfo, DeliveryResult, Message};
+pub use provider::Provider;
 
 // Re-export concrete providers
 pub use openclaw::OpenClawProvider;
@@ -65,6 +65,8 @@ pub use factory::create_provider;
 
 /// Registry of all known providers, checked in priority order.
 /// First match wins during auto-detection.
+/// Reserved for programmatic provider enumeration in future CLI/API.
+#[allow(dead_code)]
 pub const PROVIDER_NAMES: &[&str] = &[
     "openclaw",
     "claude-code",

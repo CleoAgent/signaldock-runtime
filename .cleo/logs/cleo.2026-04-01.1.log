@@ -1,0 +1,44 @@
+{"level":"WARN","time":"2026-04-01T17:22:14.121Z","platform":"linux","arch":"x64","nodeVersion":"v24.13.1","subsystem":"engine","msg":"projectHash not provided to initLogger; audit correlation will be incomplete"}
+{"level":"INFO","time":"2026-04-01T17:22:14.121Z","platform":"linux","arch":"x64","nodeVersion":"v24.13.1","subsystem":"mcp:startup","version":"2026.3.36","logLevel":"info","msg":"CLEO MCP server starting"}
+{"level":"INFO","time":"2026-04-01T17:22:14.121Z","platform":"linux","arch":"x64","nodeVersion":"v24.13.1","subsystem":"mcp:startup","enableMetrics":false,"msg":"Metrics: disabled"}
+{"level":"INFO","time":"2026-04-01T17:22:14.121Z","platform":"linux","arch":"x64","nodeVersion":"v24.13.1","subsystem":"mcp:startup","msg":"Initializing dispatch layer"}
+{"level":"INFO","time":"2026-04-01T17:22:14.122Z","platform":"linux","arch":"x64","nodeVersion":"v24.13.1","subsystem":"mcp:startup","msg":"Dispatch layer initialized"}
+{"level":"INFO","time":"2026-04-01T17:22:14.122Z","platform":"linux","arch":"x64","nodeVersion":"v24.13.1","subsystem":"mcp:startup","maxJobs":10,"retentionMs":3600000,"msg":"Background job manager initialized"}
+{"level":"INFO","time":"2026-04-01T17:22:14.122Z","platform":"linux","arch":"x64","nodeVersion":"v24.13.1","subsystem":"mcp:startup","enabled":true,"ttlMs":30000,"msg":"Query cache: enabled"}
+{"level":"INFO","time":"2026-04-01T17:22:14.123Z","platform":"linux","arch":"x64","nodeVersion":"v24.13.1","subsystem":"mcp:startup","msg":"Memory resources registered"}
+{"level":"INFO","time":"2026-04-01T17:22:14.123Z","platform":"linux","arch":"x64","nodeVersion":"v24.13.1","subsystem":"mcp:startup","msg":"Connecting to stdio transport"}
+{"level":"INFO","time":"2026-04-01T17:22:14.124Z","platform":"linux","arch":"x64","nodeVersion":"v24.13.1","subsystem":"mcp:startup","transport":"stdio","msg":"Server started successfully"}
+{"level":"INFO","time":"2026-04-01T17:22:14.124Z","platform":"linux","arch":"x64","nodeVersion":"v24.13.1","subsystem":"mcp:startup","msg":"Ready for requests"}
+{"level":"WARN","time":"2026-04-01T17:22:14.324Z","platform":"linux","arch":"x64","nodeVersion":"v24.13.1","subsystem":"engine","msg":"projectHash not provided to initLogger; audit correlation will be incomplete"}
+{"level":"INFO","time":"2026-04-01T17:22:14.325Z","platform":"linux","arch":"x64","nodeVersion":"v24.13.1","subsystem":"mcp:startup","version":"2026.3.36","logLevel":"info","msg":"CLEO MCP server starting"}
+{"level":"INFO","time":"2026-04-01T17:22:14.325Z","platform":"linux","arch":"x64","nodeVersion":"v24.13.1","subsystem":"mcp:startup","enableMetrics":false,"msg":"Metrics: disabled"}
+{"level":"INFO","time":"2026-04-01T17:22:14.325Z","platform":"linux","arch":"x64","nodeVersion":"v24.13.1","subsystem":"mcp:startup","msg":"Initializing dispatch layer"}
+{"level":"INFO","time":"2026-04-01T17:22:14.326Z","platform":"linux","arch":"x64","nodeVersion":"v24.13.1","subsystem":"mcp:startup","msg":"Dispatch layer initialized"}
+{"level":"INFO","time":"2026-04-01T17:22:14.326Z","platform":"linux","arch":"x64","nodeVersion":"v24.13.1","subsystem":"mcp:startup","maxJobs":10,"retentionMs":3600000,"msg":"Background job manager initialized"}
+{"level":"INFO","time":"2026-04-01T17:22:14.326Z","platform":"linux","arch":"x64","nodeVersion":"v24.13.1","subsystem":"mcp:startup","enabled":true,"ttlMs":30000,"msg":"Query cache: enabled"}
+{"level":"INFO","time":"2026-04-01T17:22:14.328Z","platform":"linux","arch":"x64","nodeVersion":"v24.13.1","subsystem":"mcp:startup","msg":"Memory resources registered"}
+{"level":"INFO","time":"2026-04-01T17:22:14.328Z","platform":"linux","arch":"x64","nodeVersion":"v24.13.1","subsystem":"mcp:startup","msg":"Connecting to stdio transport"}
+{"level":"INFO","time":"2026-04-01T17:22:14.328Z","platform":"linux","arch":"x64","nodeVersion":"v24.13.1","subsystem":"mcp:startup","transport":"stdio","msg":"Server started successfully"}
+{"level":"INFO","time":"2026-04-01T17:22:14.328Z","platform":"linux","arch":"x64","nodeVersion":"v24.13.1","subsystem":"mcp:startup","msg":"Ready for requests"}
+{"level":"WARN","time":"2026-04-01T17:22:14.447Z","platform":"linux","arch":"x64","nodeVersion":"v24.13.1","subsystem":"engine","msg":"projectHash not provided to initLogger; audit correlation will be incomplete"}
+{"level":"INFO","time":"2026-04-01T17:22:14.447Z","platform":"linux","arch":"x64","nodeVersion":"v24.13.1","subsystem":"mcp:startup","version":"0.0.0","logLevel":"info","msg":"CLEO MCP server starting"}
+{"level":"INFO","time":"2026-04-01T17:22:14.447Z","platform":"linux","arch":"x64","nodeVersion":"v24.13.1","subsystem":"mcp:startup","enableMetrics":false,"msg":"Metrics: disabled"}
+{"level":"INFO","time":"2026-04-01T17:22:14.447Z","platform":"linux","arch":"x64","nodeVersion":"v24.13.1","subsystem":"mcp:startup","msg":"Initializing dispatch layer"}
+{"level":"INFO","time":"2026-04-01T17:22:14.448Z","platform":"linux","arch":"x64","nodeVersion":"v24.13.1","subsystem":"mcp:startup","msg":"Dispatch layer initialized"}
+{"level":"INFO","time":"2026-04-01T17:22:14.448Z","platform":"linux","arch":"x64","nodeVersion":"v24.13.1","subsystem":"mcp:startup","maxJobs":10,"retentionMs":3600000,"msg":"Background job manager initialized"}
+{"level":"INFO","time":"2026-04-01T17:22:14.448Z","platform":"linux","arch":"x64","nodeVersion":"v24.13.1","subsystem":"mcp:startup","enabled":true,"ttlMs":30000,"msg":"Query cache: enabled"}
+{"level":"INFO","time":"2026-04-01T17:22:14.450Z","platform":"linux","arch":"x64","nodeVersion":"v24.13.1","subsystem":"mcp:startup","msg":"Memory resources registered"}
+{"level":"INFO","time":"2026-04-01T17:22:14.450Z","platform":"linux","arch":"x64","nodeVersion":"v24.13.1","subsystem":"mcp:startup","msg":"Connecting to stdio transport"}
+{"level":"INFO","time":"2026-04-01T17:22:14.450Z","platform":"linux","arch":"x64","nodeVersion":"v24.13.1","subsystem":"mcp:startup","transport":"stdio","msg":"Server started successfully"}
+{"level":"INFO","time":"2026-04-01T17:22:14.450Z","platform":"linux","arch":"x64","nodeVersion":"v24.13.1","subsystem":"mcp:startup","msg":"Ready for requests"}
+{"level":"WARN","time":"2026-04-01T17:22:14.468Z","platform":"linux","arch":"x64","nodeVersion":"v24.13.1","subsystem":"engine","msg":"projectHash not provided to initLogger; audit correlation will be incomplete"}
+{"level":"INFO","time":"2026-04-01T17:22:14.468Z","platform":"linux","arch":"x64","nodeVersion":"v24.13.1","subsystem":"mcp:startup","version":"0.0.0","logLevel":"info","msg":"CLEO MCP server starting"}
+{"level":"INFO","time":"2026-04-01T17:22:14.468Z","platform":"linux","arch":"x64","nodeVersion":"v24.13.1","subsystem":"mcp:startup","enableMetrics":false,"msg":"Metrics: disabled"}
+{"level":"INFO","time":"2026-04-01T17:22:14.468Z","platform":"linux","arch":"x64","nodeVersion":"v24.13.1","subsystem":"mcp:startup","msg":"Initializing dispatch layer"}
+{"level":"INFO","time":"2026-04-01T17:22:14.472Z","platform":"linux","arch":"x64","nodeVersion":"v24.13.1","subsystem":"mcp:startup","msg":"Dispatch layer initialized"}
+{"level":"INFO","time":"2026-04-01T17:22:14.473Z","platform":"linux","arch":"x64","nodeVersion":"v24.13.1","subsystem":"mcp:startup","maxJobs":10,"retentionMs":3600000,"msg":"Background job manager initialized"}
+{"level":"INFO","time":"2026-04-01T17:22:14.473Z","platform":"linux","arch":"x64","nodeVersion":"v24.13.1","subsystem":"mcp:startup","enabled":true,"ttlMs":30000,"msg":"Query cache: enabled"}
+{"level":"INFO","time":"2026-04-01T17:22:14.474Z","platform":"linux","arch":"x64","nodeVersion":"v24.13.1","subsystem":"mcp:startup","msg":"Memory resources registered"}
+{"level":"INFO","time":"2026-04-01T17:22:14.474Z","platform":"linux","arch":"x64","nodeVersion":"v24.13.1","subsystem":"mcp:startup","msg":"Connecting to stdio transport"}
+{"level":"INFO","time":"2026-04-01T17:22:14.474Z","platform":"linux","arch":"x64","nodeVersion":"v24.13.1","subsystem":"mcp:startup","transport":"stdio","msg":"Server started successfully"}
+{"level":"INFO","time":"2026-04-01T17:22:14.474Z","platform":"linux","arch":"x64","nodeVersion":"v24.13.1","subsystem":"mcp:startup","msg":"Ready for requests"}

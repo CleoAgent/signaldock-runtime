@@ -50,7 +50,7 @@ pub fn create_provider(config: &Config) -> Result<Box<dyn Provider>> {
                 });
             Ok(Box::new(FileProvider::new(dir)))
         }
-        "stdout" | _ => {
+        _ => {
             Ok(Box::new(StdoutProvider))
         }
     }

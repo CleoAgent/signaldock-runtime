@@ -31,7 +31,10 @@
 use serde::{Deserialize, Serialize};
 
 /// Static metadata about a provider.
+/// All fields are populated by every provider impl and used in `status_line()`.
+/// Some fields are reserved for future CLI display / API introspection.
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 pub struct ProviderInfo {
     /// Machine name (used in --platform flag): "openclaw", "claude-code", etc.
     pub name: &'static str,

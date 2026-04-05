@@ -33,11 +33,9 @@ pub mod file;
 pub mod providers;
 
 // Re-export transport types
-pub use base::{Adapter, AdapterConfig, TransportResult};
 pub use http::HttpAdapter;
 pub use stdout::StdoutAdapter;
 pub use file::FileAdapter;
 
 // Re-export provider types (bubble up for convenience)
-pub use providers::provider::{Provider, ProviderInfo, Message, DeliveryResult};
 pub use providers::{detect_provider, create_provider};

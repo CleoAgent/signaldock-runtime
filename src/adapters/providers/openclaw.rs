@@ -3,7 +3,7 @@
 //! Detection: ~/.openclaw/openclaw.json with hooks.enabled = true
 //! Delivery: Uses HttpAdapter to POST to http://127.0.0.1:{port}/hooks/agent
 
-use anyhow::{Context, Result};
+use anyhow::Result;
 use crate::adapters::HttpAdapter;
 use crate::adapters::base::{Adapter, TransportResult};
 use super::provider::*;
@@ -45,7 +45,7 @@ impl Provider for OpenClawProvider {
         let content = std::fs::read_to_string(home.join(".openclaw/openclaw.json")).ok()?;
         let json: serde_json::Value = serde_json::from_str(&content).ok()?;
 
-        if json.get("hooks")?.get("enabled")?.as_bool()? != true { return None; }
+        if !json.get("hooks")?.get("enabled")?.as_bool()? { return None; }
 
         let port = json.get("gateway").and_then(|g| g.get("port")).and_then(|p| p.as_u64()).unwrap_or(18789) as u16;
         let token = json.get("hooks")?.get("token")?.as_str()?.to_string();
