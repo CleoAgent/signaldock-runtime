@@ -74,9 +74,8 @@ async fn poll_once_inner(
 ) -> Result<usize> {
     let client = reqwest::Client::new();
     let resp = client.get(format!(
-            "{}/messages/peek?limit=50&mentioned={}",
+            "{}/messages/peek?limit=50",
             config.api_base,
-            urlencoding::encode(&config.agent_id),
         ))
         .header("Authorization", format!("Bearer {}", config.api_key))
         .header("X-Agent-Id", &config.agent_id)
