@@ -102,14 +102,15 @@ main() {
   install_dir=$(pick_install_dir)
   say "Install:  ${install_dir}"
 
-  # Windows gets an .exe suffix
+  # Platform-specific archive format and binary extension
+  local archive_ext bin_ext
   case "$platform" in
-    windows-*) ext=".exe" ;;
-    *) ext="" ;;
+    windows-*) archive_ext=".zip"; bin_ext=".exe" ;;
+    *) archive_ext=".tar.gz"; bin_ext="" ;;
   esac
 
-  url="https://github.com/${REPO}/releases/download/v${version}/signaldock-${platform}${ext}"
-  dest="${install_dir}/${BINARY}${ext}"
+  url="https://github.com/${REPO}/releases/download/v${version}/signaldock-${platform}${archive_ext}"
+  dest="${install_dir}/${BINARY}${bin_ext}"
 
   # Create install dir if needed
   if [ ! -d "$install_dir" ]; then
@@ -119,18 +120,33 @@ main() {
   say ""
   say "Downloading: ${url}"
 
-  local tmp
+  local tmp tmpdir
   tmp="$(mktemp)"
-  trap 'rm -f "$tmp"' EXIT
+  tmpdir="$(mktemp -d)"
+  trap 'rm -f "$tmp"; rm -rf "$tmpdir"' EXIT
 
   download "$url" "$tmp"
 
+  # Extract binary from archive
+  case "$archive_ext" in
+    .tar.gz)
+      tar xzf "$tmp" -C "$tmpdir"
+      ;;
+    .zip)
+      need unzip
+      unzip -q "$tmp" -d "$tmpdir"
+      ;;
+  esac
+
+  local extracted="${tmpdir}/${BINARY}${bin_ext}"
+  [ -f "$extracted" ] || err "Binary not found in archive. Expected: ${BINARY}${bin_ext}"
+
   # Install (may need sudo for /usr/local/bin)
   if [ -w "$install_dir" ]; then
-    mv "$tmp" "$dest"
+    mv "$extracted" "$dest"
     chmod +x "$dest"
   else
-    sudo mv "$tmp" "$dest"
+    sudo mv "$extracted" "$dest"
     sudo chmod +x "$dest"
   fi
 
