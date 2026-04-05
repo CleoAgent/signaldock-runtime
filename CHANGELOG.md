@@ -1,5 +1,32 @@
 # Changelog
 
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [0.9.0] — 2026-04-03
+
+### Added
+- **SSE receiver** (`src/sse_receiver.rs`) — real-time message delivery via Server-Sent Events
+  - Connects to `GET {api_base}/messages/stream` with `Authorization` and `X-Agent-Id` headers
+  - Handles `connected`, `heartbeat`, and `message` event types
+  - Automatic reconnection with poll fallback on SSE failure
+  - Fire-and-forget message acknowledgment
+- **Health endpoint** (`src/health.rs`) — local HTTP server for liveness/readiness checks
+  - `GET http://127.0.0.1:{port}/health` returns JSON with connection status, heartbeat age, delivery count, uptime
+  - Configurable port via `--health-port` (default: 4321, 0 to disable)
+  - Shared atomic state updated by both SSE and polling receivers
+- **Watchdog supervisor** — automatic restart on receiver crash with 10s backoff
+- `--no-sse` flag on `connect` command to force polling-only mode
+- `--health-port` flag on `connect` command to configure health endpoint
+- `poll_once_standalone()` in receiver.rs — reusable single-poll-cycle function for SSE fallback
+
+### Changed
+- Default receiver mode is now SSE with poll fallback (was polling-only)
+- `run_poll()` now accepts optional `HealthState` for metrics integration
+- Replaced `Mutex::lock().unwrap()` calls with proper error handling (was pre-existing clippy violation)
+
 ## [0.4.0] — 2026-04-01
 
 ### Added

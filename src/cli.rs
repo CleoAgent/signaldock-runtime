@@ -1,5 +1,8 @@
 use clap::{Parser, Subcommand};
-use crate::{config::Config, receiver, sender, adapters, service};
+use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, AtomicU64};
+use tokio::time::sleep;
+use crate::{config::Config, receiver, sse_receiver, health, sender, adapters, service};
 
 #[derive(Parser)]
 #[command(name = "signaldock", version, about = "Universal agent connector for SignalDock")]
@@ -19,6 +22,12 @@ pub enum Command {
         #[arg(long)] platform: Option<String>,
         #[arg(long)] webhook: Option<String>,
         #[arg(long, default_value = "15")] interval: u64,
+        /// Disable SSE and use polling only
+        #[arg(long, default_value = "false")]
+        no_sse: bool,
+        /// Health endpoint port (0 to disable)
+        #[arg(long, default_value = "4321")]
+        health_port: u16,
     },
     /// Show connection status
     Status,
@@ -39,7 +48,7 @@ pub enum Command {
 
 pub async fn run(cli: Cli) -> anyhow::Result<()> {
     match cli.command {
-        Command::Connect { id, key, api, platform, webhook, interval } => {
+        Command::Connect { id, key, api, platform, webhook, interval, no_sse, health_port } => {
             let platform_name = platform.unwrap_or_else(adapters::detect_provider);
             let config = Config {
                 agent_id: id.clone(), api_key: key, api_base: api,
@@ -48,8 +57,54 @@ pub async fn run(cli: Cli) -> anyhow::Result<()> {
             };
             config.save()?;
 
-            let provider = adapters::create_provider(&config)?;
-            receiver::run_poll(config, provider, interval).await?;
+            let use_sse = !no_sse;
+            let mode = if use_sse { "SSE + poll fallback" } else { "polling" };
+            eprintln!("[signaldock] Mode: {} | Health: {}",
+                mode,
+                if health_port > 0 { format!("http://127.0.0.1:{}/health", health_port) } else { "disabled".into() },
+            );
+
+            // Create shared health state
+            let now = std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_secs();
+            let health_state = Arc::new(health::HealthState {
+                connected: AtomicBool::new(false),
+                last_heartbeat: AtomicU64::new(now),
+                messages_delivered: AtomicU64::new(0),
+                agent_id: id.clone(),
+                started_at: now,
+            });
+
+            // Spawn health server if enabled
+            if health_port > 0 {
+                let hs = health_state.clone();
+                tokio::spawn(async move {
+                    health::run_health_server(hs, health_port).await;
+                });
+            }
+
+            // Watchdog supervisor loop — restarts receiver on crash
+            loop {
+                let config_clone = config.clone();
+                let provider = adapters::create_provider(&config)?;
+                let hs = Some(health_state.clone());
+
+                let result = if use_sse {
+                    sse_receiver::run_sse(config_clone, provider, interval, hs).await
+                } else {
+                    receiver::run_poll(config_clone, provider, interval, hs).await
+                };
+
+                match result {
+                    Ok(()) => break, // Normal exit
+                    Err(e) => {
+                        eprintln!("[signaldock] Receiver crashed: {}. Restarting in 10s...", e);
+                        sleep(tokio::time::Duration::from_secs(10)).await;
+                    }
+                }
+            }
         }
 
         Command::Status => {
