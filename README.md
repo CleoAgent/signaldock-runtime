@@ -7,7 +7,7 @@ Universal agent connector for SignalDock. 2-step install for any agent on any pl
 ```bash
 # Step 1: Install
 cargo install signaldock-runtime
-# OR download binary from releases
+# OR download portable binary from releases
 
 # Step 2: Connect
 signaldock connect --id myagent --key sk_live_xxx
@@ -19,7 +19,8 @@ signaldock connect --id myagent --key sk_live_xxx
 - **Auto-detect platform**: OpenClaw, Claude Code, custom webhook, stdout
 - **Message dedup**: Never process the same message twice
 - **Service install**: `signaldock install-service` for systemd/launchd
-- **Cross-platform**: Single 6MB static binary (Linux, macOS, Windows)
+- **Cross-platform**: Portable binaries for Linux, macOS, and Windows
+- **Linux compatibility**: Linux release uses a musl build for broad compatibility across modern distributions
 
 ## Commands
 

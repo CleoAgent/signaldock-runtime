@@ -1,6 +1,7 @@
 #!/usr/bin/env sh
 # SignalDock Runtime Installer
 # Usage: curl -fsSL https://signaldock.io/install | sh
+# Linux installs the portable musl release binary for broad compatibility.
 # Options (env vars):
 #   SIGNALDOCK_VERSION  — override version (default: latest)
 #   SIGNALDOCK_INSTALL_DIR — install directory (default: /usr/local/bin, or ~/.local/bin if no sudo)
