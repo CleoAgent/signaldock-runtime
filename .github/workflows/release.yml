@@ -70,7 +70,7 @@ jobs:
         run: |
           New-Item -ItemType Directory -Force -Path dist | Out-Null
           Copy-Item target/${{ matrix.target }}/release/signaldock.exe dist/signaldock.exe
-          Compress-Archive -Path dist/signaldock.exe -DestinationPath ${{ matrix.artifact_name }}${{ matrix.archive_ext }}
+          Compress-Archive -Path dist/signaldock.exe -DestinationPath ${{ matrix.artifact_name }}${{ matrix.archive_ext }} -Force
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
