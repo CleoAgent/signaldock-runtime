@@ -19,18 +19,22 @@ jobs:
           - target: x86_64-unknown-linux-musl
             os: ubuntu-latest
             artifact_name: signaldock-linux-x64
+            archive_ext: .tar.gz
 
           - target: x86_64-apple-darwin
             os: macos-13
             artifact_name: signaldock-darwin-x64
+            archive_ext: .tar.gz
 
           - target: aarch64-apple-darwin
             os: macos-latest
             artifact_name: signaldock-darwin-arm64
+            archive_ext: .tar.gz
 
           - target: x86_64-pc-windows-msvc
             os: windows-latest
-            artifact_name: signaldock-windows-x64.exe
+            artifact_name: signaldock-windows-x64
+            archive_ext: .zip
 
     steps:
       - uses: actions/checkout@v4
@@ -52,20 +56,27 @@ jobs:
       - name: Build
         run: cargo build --release --target ${{ matrix.target }}
 
-      - name: Prepare binary (Unix)
+      - name: Prepare archive (Unix)
         if: runner.os != 'Windows'
-        run: cp target/${{ matrix.target }}/release/signaldock ${{ matrix.artifact_name }}
+        run: |
+          mkdir -p dist
+          cp target/${{ matrix.target }}/release/signaldock dist/signaldock
+          chmod +x dist/signaldock
+          tar -czf ${{ matrix.artifact_name }}${{ matrix.archive_ext }} -C dist signaldock
 
-      - name: Prepare binary (Windows)
+      - name: Prepare archive (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
-        run: cp target/${{ matrix.target }}/release/signaldock.exe ${{ matrix.artifact_name }}
+        run: |
+          New-Item -ItemType Directory -Force -Path dist | Out-Null
+          Copy-Item target/${{ matrix.target }}/release/signaldock.exe dist/signaldock.exe
+          Compress-Archive -Path dist/signaldock.exe -DestinationPath ${{ matrix.artifact_name }}${{ matrix.archive_ext }}
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact_name }}
-          path: ${{ matrix.artifact_name }}
+          path: ${{ matrix.artifact_name }}${{ matrix.archive_ext }}
           if-no-files-found: error
 
   release:
@@ -83,7 +94,7 @@ jobs:
         with:
           generate_release_notes: true
           files: |
-            signaldock-linux-x64
-            signaldock-darwin-x64
-            signaldock-darwin-arm64
-            signaldock-windows-x64.exe
+            signaldock-linux-x64.tar.gz
+            signaldock-darwin-x64.tar.gz
+            signaldock-darwin-arm64.tar.gz
+            signaldock-windows-x64.zip

@@ -5,12 +5,14 @@ Universal agent connector for SignalDock. 2-step install for any agent on any pl
 ## Quick Start
 
 ```bash
-# Step 1: Install
-cargo install signaldock-runtime
-# OR download portable binary from releases
+# Step 1: Install latest release
+curl -fsSL https://raw.githubusercontent.com/CleoAgent/signaldock-runtime/main/install.sh | sh
 
 # Step 2: Connect
 signaldock connect --id myagent --key sk_live_xxx
+
+# Step 3: Persist across reboots
+signaldock install-service
 ```
 
 ## Features
@@ -32,6 +34,13 @@ signaldock inbox                                # Check inbox
 signaldock disconnect                           # Stop
 signaldock install-service                      # Install as system service
 ```
+
+## Release artifacts
+
+- `signaldock-linux-x64.tar.gz`
+- `signaldock-darwin-x64.tar.gz`
+- `signaldock-darwin-arm64.tar.gz`
+- `signaldock-windows-x64.zip`
 
 ## Platform Adapters
 
