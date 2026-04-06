@@ -1107,7 +1107,7 @@ dependencies = [
 
 [[package]]
 name = "signaldock-runtime"
-version = "0.9.0"
+version = "0.9.4"
 dependencies = [
  "anyhow",
  "chrono",
