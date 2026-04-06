@@ -170,15 +170,26 @@ fn handle_sse_event(
 
                 let preview_len = content.len().min(80);
                 eprintln!(
-                    "[signaldock] SSE message from @{}: {}...",
+                    "[signaldock] SSE message from @{} msg={} conv={} type={}: {}...",
                     msg.from,
+                    msg.id,
+                    msg.conversation_id,
+                    msg.content_type,
                     &content[..preview_len]
                 );
+
+                if let Some(h) = health {
+                    h.messages_received.fetch_add(1, Ordering::Relaxed);
+                    if let Ok(mut last) = h.last_message_id.lock() {
+                        *last = Some(msg.id.clone());
+                    }
+                }
 
                 match provider.deliver(&msg) {
                     Ok(DeliveryResult::Delivered) => {
                         if let Some(h) = health {
                             h.messages_delivered.fetch_add(1, Ordering::Relaxed);
+                            h.hook_deliveries.fetch_add(1, Ordering::Relaxed);
                         }
                         // Auto-ack via API (fire and forget)
                         let api_base = config.api_base.clone();
@@ -196,9 +207,19 @@ fn handle_sse_event(
                                 .await;
                         });
                     }
-                    Ok(DeliveryResult::Retry(r)) => eprintln!("[signaldock] Retry: {}", r),
-                    Ok(DeliveryResult::Failed(r)) => eprintln!("[signaldock] Failed: {}", r),
-                    Err(e) => eprintln!("[signaldock] Error: {}", e),
+                    Ok(DeliveryResult::Retry(r)) => eprintln!("[signaldock] Retry msg={} conv={}: {}", msg.id, msg.conversation_id, r),
+                    Ok(DeliveryResult::Failed(r)) => {
+                        if let Some(h) = health {
+                            h.hook_delivery_failures.fetch_add(1, Ordering::Relaxed);
+                        }
+                        eprintln!("[signaldock] Failed msg={} conv={}: {}", msg.id, msg.conversation_id, r)
+                    }
+                    Err(e) => {
+                        if let Some(h) = health {
+                            h.hook_delivery_failures.fetch_add(1, Ordering::Relaxed);
+                        }
+                        eprintln!("[signaldock] Error msg={} conv={}: {}", msg.id, msg.conversation_id, e)
+                    },
                 }
             }
         }

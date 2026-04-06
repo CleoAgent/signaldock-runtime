@@ -131,7 +131,14 @@ async fn poll_once_inner(
             metadata: raw.get("metadata").cloned().unwrap_or(serde_json::Value::Null),
         };
 
-        eprintln!("[signaldock] New from @{}: {}...", msg.from, &msg.content[..msg.content.len().min(80)]);
+        eprintln!("[signaldock] New from @{} msg={} conv={} type={}: {}...", msg.from, msg.id, msg.conversation_id, msg.content_type, &msg.content[..msg.content.len().min(80)]);
+
+        if let Some(h) = health {
+            h.messages_received.fetch_add(1, Ordering::Relaxed);
+            if let Ok(mut last) = h.last_message_id.lock() {
+                *last = Some(msg.id.clone());
+            }
+        }
 
         match provider.deliver(&msg) {
             Ok(DeliveryResult::Delivered) => {
@@ -139,6 +146,7 @@ async fn poll_once_inner(
                 ack_ids.push(msg_id.to_string());
                 if let Some(h) = health {
                     h.messages_delivered.fetch_add(1, Ordering::Relaxed);
+                    h.hook_deliveries.fetch_add(1, Ordering::Relaxed);
                 }
             }
             Ok(DeliveryResult::Retry(reason)) => {
@@ -146,11 +154,17 @@ async fn poll_once_inner(
                 if let Ok(mut s) = seen.lock() { s.remove(msg_id); } // Will catch next cycle
             }
             Ok(DeliveryResult::Failed(reason)) => {
-                eprintln!("[signaldock] Failed: {}", reason);
+                eprintln!("[signaldock] Failed msg={} conv={}: {}", msg_id, msg.conversation_id, reason);
+                if let Some(h) = health {
+                    h.hook_delivery_failures.fetch_add(1, Ordering::Relaxed);
+                }
                 ack_ids.push(msg_id.to_string()); // Ack to prevent infinite loop
             }
             Err(e) => {
-                eprintln!("[signaldock] Error: {}", e);
+                eprintln!("[signaldock] Error msg={} conv={}: {}", msg_id, msg.conversation_id, e);
+                if let Some(h) = health {
+                    h.hook_delivery_failures.fetch_add(1, Ordering::Relaxed);
+                }
                 if let Ok(mut s) = seen.lock() { s.remove(msg_id); }
             }
         }

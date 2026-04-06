@@ -73,6 +73,12 @@ pub async fn run(cli: Cli) -> anyhow::Result<()> {
                 connected: AtomicBool::new(false),
                 last_heartbeat: AtomicU64::new(now),
                 messages_delivered: AtomicU64::new(0),
+                messages_received: AtomicU64::new(0),
+                hook_deliveries: AtomicU64::new(0),
+                hook_delivery_failures: AtomicU64::new(0),
+                last_message_id: Arc::new(std::sync::Mutex::new(None)),
+                provider_name: config.platform.clone(),
+                provider_port: std::sync::atomic::AtomicU16::new(0),
                 agent_id: id.clone(),
                 started_at: now,
             });

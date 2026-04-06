@@ -5,7 +5,7 @@
 //! message delivery count. Useful for monitoring, orchestrators, and liveness probes.
 
 use std::sync::Arc;
-use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU16, AtomicU64, Ordering};
 use tokio::net::TcpListener;
 
 /// Shared health state updated by the SSE receiver and polling loop.
@@ -14,8 +14,20 @@ pub struct HealthState {
     pub connected: AtomicBool,
     /// Unix timestamp of the last heartbeat (SSE) or successful poll.
     pub last_heartbeat: AtomicU64,
-    /// Total messages delivered since process start.
+    /// Total messages delivered to the configured provider since process start.
     pub messages_delivered: AtomicU64,
+    /// Total inbound messages received from SignalDock since process start.
+    pub messages_received: AtomicU64,
+    /// Total successful hook/provider forwards since process start.
+    pub hook_deliveries: AtomicU64,
+    /// Total failed hook/provider forwards since process start.
+    pub hook_delivery_failures: AtomicU64,
+    /// Last delivered message id if known.
+    pub last_message_id: Arc<std::sync::Mutex<Option<String>>>,
+    /// Detected provider/platform name.
+    pub provider_name: String,
+    /// Hook/health target port when applicable.
+    pub provider_port: AtomicU16,
     /// The agent ID this runtime is connected as.
     pub agent_id: String,
     /// Unix timestamp when the runtime started.
@@ -52,6 +64,16 @@ pub async fn run_health_server(state: Arc<HealthState>, port: u16) {
                 let connected = state.connected.load(Ordering::Relaxed);
                 let last_hb = state.last_heartbeat.load(Ordering::Relaxed);
                 let delivered = state.messages_delivered.load(Ordering::Relaxed);
+                let received = state.messages_received.load(Ordering::Relaxed);
+                let hook_deliveries = state.hook_deliveries.load(Ordering::Relaxed);
+                let hook_failures = state.hook_delivery_failures.load(Ordering::Relaxed);
+                let provider_port = state.provider_port.load(Ordering::Relaxed);
+                let last_message_id = state
+                    .last_message_id
+                    .lock()
+                    .ok()
+                    .and_then(|g| g.clone())
+                    .unwrap_or_default();
                 let now = std::time::SystemTime::now()
                     .duration_since(std::time::UNIX_EPOCH)
                     .unwrap_or_default()
@@ -60,8 +82,19 @@ pub async fn run_health_server(state: Arc<HealthState>, port: u16) {
                 let uptime = now.saturating_sub(state.started_at);
 
                 let body = format!(
-                    r#"{{"status":"{}","agentId":"{}","connected":{},"lastHeartbeat":{},"messagesDelivered":{},"uptimeSeconds":{}}}"#,
-                    status, state.agent_id, connected, last_hb, delivered, uptime
+                    r#"{{"status":"{}","agentId":"{}","provider":"{}","providerPort":{},"connected":{},"lastHeartbeat":{},"messagesReceived":{},"messagesDelivered":{},"hookDeliveries":{},"hookDeliveryFailures":{},"lastMessageId":"{}","uptimeSeconds":{}}}"#,
+                    status,
+                    state.agent_id,
+                    state.provider_name,
+                    provider_port,
+                    connected,
+                    last_hb,
+                    received,
+                    delivered,
+                    hook_deliveries,
+                    hook_failures,
+                    last_message_id,
+                    uptime
                 );
                 let response = format!(
                     "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
