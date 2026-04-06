@@ -30,7 +30,7 @@ function getPlatformId() {
 }
 
 function getDownloadUrl(platformId) {
-  const suffix = platformId.startsWith('windows') ? '.exe' : '';
+  const suffix = platformId.startsWith('windows') ? '.zip' : '.tar.gz';
   return `https://github.com/${REPO}/releases/download/v${VERSION}/signaldock-${platformId}${suffix}`;
 }
 
@@ -92,17 +92,20 @@ async function main() {
   fs.mkdirSync(BIN_DIR, { recursive: true });
 
   try {
-    await downloadFile(url, NATIVE_BIN);
+    const archivePath = NATIVE_BIN + (process.platform === 'win32' ? '.zip' : '.tar.gz');
+    await downloadFile(url, archivePath);
+    if (process.platform === 'win32') {
+      execSync(`powershell -NoProfile -Command "Expand-Archive -Path '${archivePath}' -DestinationPath '${BIN_DIR}' -Force"`, { stdio: 'inherit' });
+    } else {
+      execSync(`tar -xzf '${archivePath}' -C '${BIN_DIR}'`, { stdio: 'inherit' });
+      fs.chmodSync(NATIVE_BIN, 0o755);
+    }
+    fs.unlinkSync(archivePath);
   } catch (err) {
     console.error(`signaldock: download failed: ${err.message}`);
     console.error('You can manually download the binary from:');
     console.error(`  https://github.com/${REPO}/releases/tag/v${VERSION}`);
     process.exit(1);
-  }
-
-  // Make executable on POSIX
-  if (process.platform !== 'win32') {
-    fs.chmodSync(NATIVE_BIN, 0o755);
   }
 
   console.log(`signaldock: installed to ${NATIVE_BIN}`);
