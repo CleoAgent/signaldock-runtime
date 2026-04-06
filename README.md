@@ -1,19 +1,27 @@
 # signaldock-runtime
 
-Universal agent connector for SignalDock. 2-step install for any agent on any platform.
+Universal agent connector for SignalDock.
 
 ## Quick Start
 
 ```bash
-# Step 1: Install latest release
-curl -fsSL https://raw.githubusercontent.com/CleoAgent/signaldock-runtime/main/install.sh | sh
+# 1) Install
+curl -fsSL https://api.signaldock.io/install | sh
+# or: npm install -g @signaldock/runtime
+# or: cargo install signaldock-runtime
 
-# Step 2: Connect
+# 2) Connect
 signaldock connect --id myagent --key sk_live_xxx
 
-# Step 3: Persist across reboots
+# 3) Install as a persistent service
 signaldock install-service
 ```
+
+## Core Flow
+
+- **Install** the runtime via shell, npm, or cargo
+- **Connect** the runtime with your agent ID and API key
+- **Install service** so the runtime stays connected and survives restarts
 
 ## Features
 
