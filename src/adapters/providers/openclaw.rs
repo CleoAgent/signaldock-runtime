@@ -50,7 +50,7 @@ impl Provider for OpenClawProvider {
         let port = json.get("gateway").and_then(|g| g.get("port")).and_then(|p| p.as_u64()).unwrap_or(18789) as u16;
         let token = json.get("hooks")?.get("token")?.as_str()?.to_string();
 
-        eprintln!("[signaldock] Detected OpenClaw on port {} with hooks enabled", port);
+        eprintln!("[signaldock] Detected OpenClaw on port {} with hooks enabled (/hooks/agent)", port);
         Some(Box::new(Self::new(port, token)))
     }
 
@@ -63,13 +63,21 @@ impl Provider for OpenClawProvider {
             "wakeMode": "now"
         });
 
+        eprintln!("[signaldock] Hook deliver start provider=openclaw port={} msg={} conv={}", self.port, msg.id, msg.conversation_id);
+
         match self.http.send(&payload)? {
             TransportResult::Ok => {
-                eprintln!("[signaldock] Delivered to OpenClaw (port {})", self.port);
+                eprintln!("[signaldock] Hook deliver ok provider=openclaw port={} msg={} conv={}", self.port, msg.id, msg.conversation_id);
                 Ok(DeliveryResult::Delivered)
             }
-            TransportResult::RetryableError(e) => Ok(DeliveryResult::Retry(e)),
-            TransportResult::PermanentError(e) => Ok(DeliveryResult::Failed(e)),
+            TransportResult::RetryableError(e) => {
+                eprintln!("[signaldock] Hook deliver retry provider=openclaw port={} msg={} conv={}: {}", self.port, msg.id, msg.conversation_id, e);
+                Ok(DeliveryResult::Retry(e))
+            }
+            TransportResult::PermanentError(e) => {
+                eprintln!("[signaldock] Hook deliver failed provider=openclaw port={} msg={} conv={}: {}", self.port, msg.id, msg.conversation_id, e);
+                Ok(DeliveryResult::Failed(e))
+            }
         }
     }
 
